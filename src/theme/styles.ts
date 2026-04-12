@@ -14,5 +14,12 @@ export const GlobalStyles = StyleSheet.create({
     borderRadius: 15,
     padding: 20,
     marginVertical: 10,
-  }
+  },
+  // Add the missing heading style here
+  heading: {
+    color: Colors.textPrimary,
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
 });

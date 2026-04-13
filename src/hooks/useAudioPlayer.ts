@@ -1,17 +1,17 @@
-import { useState, useEffect } from 'react';
 import { Audio } from 'expo-av';
 import { usePlayerContext } from '../context/PlayerContext';
 import { Track } from '../types';
 
-/**
- * Hook to manage audio playback synced with global context
- */
 export const useAudioPlayer = () => {
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const { playerStatus, setPlayerStatus } = usePlayerContext();
+  const { sound, setSound, playerStatus, setPlayerStatus } = usePlayerContext();
 
   async function playTrack(track: Track) {
     try {
+      if (playerStatus?.currentTrack?.id === track.id && sound) {
+        await togglePlayback();
+        return;
+      }
+
       if (sound) {
         await sound.unloadAsync();
       }
@@ -22,13 +22,7 @@ export const useAudioPlayer = () => {
       );
 
       setSound(newSound);
-      
-      setPlayerStatus({
-        currentTrack: track,
-        isPlaying: true,
-        position: 0,
-        duration: track.duration,
-      });
+      setPlayerStatus(prev => ({ ...prev, currentTrack: track, isPlaying: true }));
 
       newSound.setOnPlaybackStatusUpdate((status) => {
         if (status.isLoaded) {
@@ -36,13 +30,23 @@ export const useAudioPlayer = () => {
             ...prev,
             isPlaying: status.isPlaying,
             position: status.positionMillis,
+            duration: status.durationMillis || 0,
           }));
         }
       });
     } catch (error) {
-      console.error("Playback Error:", error);
+      console.error("Audio Playback Error:", error);
     }
   }
 
-  return { playTrack, playerStatus };
+  async function togglePlayback() {
+    if (!sound) return;
+    const status = await sound.getStatusAsync();
+    if (status.isLoaded) {
+      status.isPlaying ? await sound.pauseAsync() : await sound.playAsync();
+    }
+  }
+
+  //We must return playerStatus so screens can use it!
+  return { playTrack, togglePlayback, playerStatus };
 };

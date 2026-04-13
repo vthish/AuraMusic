@@ -1,5 +1,6 @@
-
-// Interface for a single music track object
+/**
+ * Core data structures for the music player
+ */
 export interface Track {
   id: string;
   title: string;
@@ -9,9 +10,6 @@ export interface Track {
   duration: number;
 }
 
-
-//Interface for the global player state
- 
 export interface PlayerState {
   currentTrack: Track | null;
   isPlaying: boolean;

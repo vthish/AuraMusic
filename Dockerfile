@@ -1,19 +1,18 @@
-# Use Node.js as the base image
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Install project dependencies
+# Copy only package files first to leverage Docker cache
 COPY package*.json ./
+
+# Install local dependencies
 RUN npm install
 
-# Install Expo CLI globally
-RUN npm install -g expo-cli
-
+# Copy the rest of the project files
 COPY . .
 
-# Expose the default Expo port
+# Expose the Metro Bundler port
 EXPOSE 8081
 
-# Start the Expo development server
-CMD ["npx", "expo", "start"]
+# Directly run expo using npx (No global expo-cli needed)
+CMD ["npx", "expo", "start", "--tunnel"]

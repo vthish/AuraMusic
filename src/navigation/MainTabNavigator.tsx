@@ -1,8 +1,9 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, Modal } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/HomeScreen';
+import FullScreenPlayer from '../screens/FullScreenPlayer';
 import FloatingPlayer from '../components/FloatingPlayer';
 import { Colors } from '../theme/colors';
 import { usePlayerContext } from '../context/PlayerContext';
@@ -10,35 +11,28 @@ import { usePlayerContext } from '../context/PlayerContext';
 const Tab = createBottomTabNavigator();
 
 const MainTabNavigator = () => {
-  const { setPlayerVisible } = usePlayerContext();
+  const { isPlayerVisible, setPlayerVisible } = usePlayerContext();
 
   return (
     <View style={{ flex: 1 }}>
       <Tab.Navigator
         screenOptions={({ route }) => ({
           headerShown: false,
-          tabBarStyle: { 
-            backgroundColor: Colors.surface, 
-            borderTopColor: 'transparent', 
-            height: 65 
-          },
+          tabBarStyle: { backgroundColor: Colors.surface, height: 65, borderTopWidth: 0 },
           tabBarActiveTintColor: Colors.primary,
-          tabBarInactiveTintColor: Colors.textSecondary,
-          // Correctly assign icons for each tab
-          tabBarIcon: ({ color, size }) => {
-            let iconName: any;
-            if (route.name === 'Home') {
-              iconName = 'home';
-            }
-            return <Ionicons name={iconName} size={size} color={color} />;
-          },
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name={route.name === 'Home' ? 'home' : 'search'} size={size} color={color} />
+          ),
         })}
       >
         <Tab.Screen name="Home" component={HomeScreen} />
       </Tab.Navigator>
 
-      {/* FloatingPlayer now has enough space below it */}
       <FloatingPlayer onPress={() => setPlayerVisible(true)} />
+
+      <Modal visible={isPlayerVisible} animationType="slide" transparent={false}>
+        <FullScreenPlayer onClose={() => setPlayerVisible(false)} />
+      </Modal>
     </View>
   );
 };

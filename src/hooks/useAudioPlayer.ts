@@ -1,32 +1,23 @@
-import { useState, useEffect } from 'react';
 import { Audio } from 'expo-av';
 import { usePlayerContext } from '../context/PlayerContext';
 import { Track } from '../types';
 
 export const useAudioPlayer = () => {
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const { playerStatus, setPlayerStatus } = usePlayerContext();
+  const { sound, setSound, playerStatus, setPlayerStatus } = usePlayerContext();
 
-  // Load and play track
   async function playTrack(track: Track) {
     try {
-      if (sound) {
-        await sound.unloadAsync();
+      if (playerStatus.currentTrack?.id === track.id && sound) {
+        await togglePlayback();
+        return;
       }
+      if (sound) await sound.unloadAsync();
 
       const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: track.uri },
-        { shouldPlay: true }
+        { uri: track.uri }, { shouldPlay: true }
       );
-
       setSound(newSound);
-      
-      setPlayerStatus({
-        currentTrack: track,
-        isPlaying: true,
-        position: 0,
-        duration: track.duration,
-      });
+      setPlayerStatus(prev => ({ ...prev, currentTrack: track, isPlaying: true }));
 
       newSound.setOnPlaybackStatusUpdate((status) => {
         if (status.isLoaded) {
@@ -34,24 +25,22 @@ export const useAudioPlayer = () => {
             ...prev,
             isPlaying: status.isPlaying,
             position: status.positionMillis,
+            duration: status.durationMillis || 0,
           }));
         }
       });
     } catch (error) {
-      console.error("Playback Error:", error);
+      console.error("Playback System Error:", error);
     }
   }
 
-  // Toggle Play/Pause logic
   async function togglePlayback() {
     if (!sound) return;
-
-    if (playerStatus.isPlaying) {
-      await sound.pauseAsync();
-    } else {
-      await sound.playAsync();
+    const status = await sound.getStatusAsync();
+    if (status.isLoaded) {
+      status.isPlaying ? await sound.pauseAsync() : await sound.playAsync();
     }
   }
 
-  return { playTrack, togglePlayback, playerStatus };
+  return { playTrack, togglePlayback };
 };

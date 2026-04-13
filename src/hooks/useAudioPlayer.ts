@@ -7,15 +7,20 @@ export const useAudioPlayer = () => {
 
   async function playTrack(track: Track) {
     try {
-      if (playerStatus.currentTrack?.id === track.id && sound) {
+      if (playerStatus?.currentTrack?.id === track.id && sound) {
         await togglePlayback();
         return;
       }
-      if (sound) await sound.unloadAsync();
+
+      if (sound) {
+        await sound.unloadAsync();
+      }
 
       const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: track.uri }, { shouldPlay: true }
+        { uri: track.uri },
+        { shouldPlay: true }
       );
+
       setSound(newSound);
       setPlayerStatus(prev => ({ ...prev, currentTrack: track, isPlaying: true }));
 
@@ -30,7 +35,7 @@ export const useAudioPlayer = () => {
         }
       });
     } catch (error) {
-      console.error("Playback System Error:", error);
+      console.error("Audio Playback Error:", error);
     }
   }
 
@@ -42,5 +47,6 @@ export const useAudioPlayer = () => {
     }
   }
 
-  return { playTrack, togglePlayback };
+  //We must return playerStatus so screens can use it!
+  return { playTrack, togglePlayback, playerStatus };
 };

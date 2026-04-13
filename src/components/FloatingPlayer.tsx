@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../theme/colors';
+import React from 'react';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { usePlayerContext } from '../context/PlayerContext';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
+import { Colors } from '../theme/colors';
 
 interface FloatingPlayerProps {
   onPress: () => void;
@@ -13,7 +13,8 @@ const FloatingPlayer: React.FC<FloatingPlayerProps> = ({ onPress }) => {
   const { playerStatus } = usePlayerContext();
   const { togglePlayback } = useAudioPlayer();
 
-  if (!playerStatus.currentTrack) return null;
+  // If no track, don't show the player bar
+  if (!playerStatus?.currentTrack) return null;
 
   return (
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.9}>
@@ -27,7 +28,7 @@ const FloatingPlayer: React.FC<FloatingPlayerProps> = ({ onPress }) => {
       
       <TouchableOpacity onPress={togglePlayback} style={styles.playButton}>
         <Ionicons 
-          name={playerStatus.isPlaying ? "pause" : "play"} 
+          name={playerStatus?.isPlaying ? "pause" : "play"} 
           size={28} 
           color={Colors.primary} 
         />

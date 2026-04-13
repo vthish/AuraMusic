@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Colors } from '../theme/colors';
 import { usePlayerContext } from '../context/PlayerContext';
+import { useAudioPlayer } from '../hooks/useAudioPlayer';
+import { Ionicons } from '@expo/vector-icons';
 
 interface FloatingPlayerProps {
   onPress: () => void;
@@ -9,6 +11,7 @@ interface FloatingPlayerProps {
 
 const FloatingPlayer: React.FC<FloatingPlayerProps> = ({ onPress }) => {
   const { playerStatus } = usePlayerContext();
+  const { togglePlayback } = useAudioPlayer();
 
   if (!playerStatus.currentTrack) return null;
 
@@ -21,11 +24,15 @@ const FloatingPlayer: React.FC<FloatingPlayerProps> = ({ onPress }) => {
           <Text style={styles.artist} numberOfLines={1}>{playerStatus.currentTrack.artist}</Text>
         </View>
       </View>
-      <View style={styles.playButton}>
-        <Text style={{ color: Colors.primary, fontWeight: 'bold' }}>
-          {playerStatus.isPlaying ? 'PAUSE' : 'PLAY'}
-        </Text>
-      </View>
+      
+      {/* Play/Pause Button connected to togglePlayback */}
+      <TouchableOpacity onPress={togglePlayback} style={styles.playButton}>
+        <Ionicons 
+          name={playerStatus.isPlaying ? "pause" : "play"} 
+          size={28} 
+          color={Colors.primary} 
+        />
+      </TouchableOpacity>
     </TouchableOpacity>
   );
 };
@@ -33,7 +40,7 @@ const FloatingPlayer: React.FC<FloatingPlayerProps> = ({ onPress }) => {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 0,
+    bottom: 65, // Positioned exactly above the tab bar (height 65)
     width: '100%',
     height: 70,
     backgroundColor: Colors.surface,

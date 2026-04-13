@@ -3,13 +3,11 @@ import { Audio } from 'expo-av';
 import { usePlayerContext } from '../context/PlayerContext';
 import { Track } from '../types';
 
-/**
- * Hook to manage audio playback synced with global context
- */
 export const useAudioPlayer = () => {
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const { playerStatus, setPlayerStatus } = usePlayerContext();
 
+  // Load and play track
   async function playTrack(track: Track) {
     try {
       if (sound) {
@@ -44,5 +42,16 @@ export const useAudioPlayer = () => {
     }
   }
 
-  return { playTrack, playerStatus };
+  // Toggle Play/Pause logic
+  async function togglePlayback() {
+    if (!sound) return;
+
+    if (playerStatus.isPlaying) {
+      await sound.pauseAsync();
+    } else {
+      await sound.playAsync();
+    }
+  }
+
+  return { playTrack, togglePlayback, playerStatus };
 };

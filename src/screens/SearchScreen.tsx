@@ -1,227 +1,120 @@
-import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
+  View,
+  TextInput,
   FlatList,
-  Image,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
-  View
+  Image,
+  Keyboard,
+  ActivityIndicator
 } from 'react-native';
-import { YOUTUBE_API_KEY } from '../constants/Config';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Colors } from '../theme/colors';
+import { YOUTUBE_API_KEY } from '../constants/Config';
+import { useAudioPlayer } from '../hooks/useAudioPlayer';
 
-/**
- * Interface defining the structure of a YouTube API search result item.
- * This prevents the "type never" error in TypeScript.
- */
 interface YouTubeVideo {
-  id: {
-    videoId: string;
-  };
+  id: { videoId: string };
   snippet: {
     title: string;
     channelTitle: string;
-    thumbnails: {
-      medium: {
-        url: string;
-      };
-    };
+    thumbnails: { medium: { url: string } };
   };
 }
 
-/**
- * Animated placeholder shown during data fetching to improve UX.
- */
-const SkeletonItem = () => (
-  <View style={styles.skeletonContainer}>
-    <View style={styles.skeletonArt} />
-    <View style={styles.skeletonTextContainer}>
-      <View style={styles.skeletonTitle} />
-      <View style={styles.skeletonArtist} />
-    </View>
-  </View>
-);
-
 const SearchScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [results, setResults] = useState<YouTubeVideo[]>([]); // Typed as YouTubeVideo array
+  const [results, setResults] = useState<YouTubeVideo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { playTrack } = useAudioPlayer();
 
-  /**
-   * Performs a request to the YouTube Data API v3.
-   * Encodes the query to handle special characters and spaces.
-   */
-  const searchYouTube = async (query: string) => {
-    if (!query.trim()) return;
-
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    Keyboard.dismiss();
     setIsLoading(true);
+
     try {
-      const apiUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=15&q=${encodeURIComponent(query)}&type=video&key=${YOUTUBE_API_KEY}`;
-      
-      const response = await fetch(apiUrl);
-      const data = await response.json();
-      
+      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=15&q=${encodeURIComponent(searchQuery)}&type=video&key=${YOUTUBE_API_KEY}`;
+      const res = await fetch(url);
+      const data = await res.json();
       setResults(data.items || []);
-    } catch (error) {
-      console.error("YouTube API Fetch Error:", error);
+    } catch (err) {
+      console.error("Search error:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleSelect = (item: YouTubeVideo) => {
+    // Temporary direct MP3 to ensure no playback errors during testing
+    const streamUri = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
+    
+    playTrack({
+      id: item.id.videoId,
+      title: item.snippet.title,
+      artist: item.snippet.channelTitle,
+      albumArt: item.snippet.thumbnails.medium.url,
+      uri: streamUri
+    });
+  };
+
   return (
     <View style={styles.container}>
-      {/* Search Header Section */}
-      <View style={styles.searchHeader}>
+      <View style={styles.header}>
         <Ionicons name="search" size={20} color={Colors.textSecondary} />
         <TextInput
-          style={styles.searchInput}
-          placeholder="Search songs on YouTube..."
+          style={styles.input}
+          placeholder="Search for music..."
           placeholderTextColor={Colors.textSecondary}
           value={searchQuery}
           onChangeText={setSearchQuery}
-          onSubmitEditing={() => searchYouTube(searchQuery)}
+          onSubmitEditing={handleSearch}
           returnKeyType="search"
-          autoCorrect={false}
         />
       </View>
 
-      {/* Conditional Rendering based on state */}
       {isLoading ? (
-        <FlatList
-          data={[1, 2, 3, 4, 5, 6]} 
-          renderItem={() => <SkeletonItem />}
-          keyExtractor={(item) => item.toString()}
-        />
-      ) : results.length > 0 ? (
+        <ActivityIndicator color="white" style={{ marginTop: 40 }} />
+      ) : (
         <FlatList
           data={results}
           keyExtractor={(item) => item.id.videoId}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
-            <TouchableOpacity 
-              style={styles.resultItem}
-              activeOpacity={0.7}
-              onPress={() => {
-                // Future implementation: Audio streaming logic
-                console.log("Selected Video ID:", item.id.videoId);
-              }}
-            >
-              <Image 
-                source={{ uri: item.snippet.thumbnails.medium.url }} 
-                style={styles.thumbnail} 
-              />
-              <View style={styles.resultInfo}>
-                <Text style={styles.title} numberOfLines={2}>
-                  {item.snippet.title}
-                </Text>
-                <Text style={styles.channelName}>
-                  {item.snippet.channelTitle}
-                </Text>
+            <TouchableOpacity style={styles.item} onPress={() => handleSelect(item)}>
+              <Image source={{ uri: item.snippet.thumbnails.medium.url }} style={styles.img} />
+              <View style={styles.info}>
+                <Text style={styles.txtMain} numberOfLines={1}>{item.snippet.title}</Text>
+                <Text style={styles.txtSub}>{item.snippet.channelTitle}</Text>
               </View>
             </TouchableOpacity>
           )}
         />
-      ) : (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="musical-notes-outline" size={80} color="rgba(255,255,255,0.05)" />
-          <Text style={styles.emptyText}>Search for your favorite tracks...</Text>
-        </View>
       )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: Colors.background, 
-    paddingHorizontal: 15 
-  },
-  searchHeader: {
+  container: { flex: 1, backgroundColor: '#000', paddingHorizontal: 15 },
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: '#151515',
     borderRadius: 12,
     paddingHorizontal: 15,
     marginTop: 60,
-    marginBottom: 20,
     height: 52,
+    marginBottom: 20
   },
-  searchInput: { 
-    flex: 1, 
-    color: 'white', 
-    marginLeft: 10, 
-    fontSize: 16 
-  },
-  resultItem: { 
-    flexDirection: 'row', 
-    marginBottom: 18, 
-    alignItems: 'center' 
-  },
-  thumbnail: { 
-    width: 110, 
-    height: 65, 
-    borderRadius: 8, 
-    backgroundColor: '#333' 
-  },
-  resultInfo: { 
-    flex: 1, 
-    marginLeft: 12 
-  },
-  title: { 
-    color: 'white', 
-    fontSize: 14, 
-    fontWeight: '600', 
-    lineHeight: 20 
-  },
-  channelName: { 
-    color: Colors.textSecondary, 
-    fontSize: 12, 
-    marginTop: 4 
-  },
-  emptyContainer: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center' 
-  },
-  emptyText: { 
-    color: Colors.textSecondary, 
-    marginTop: 15, 
-    fontSize: 15 
-  },
-  
-  /* Skeleton Loading Styles */
-  skeletonContainer: { 
-    flexDirection: 'row', 
-    marginBottom: 20, 
-    alignItems: 'center' 
-  },
-  skeletonArt: { 
-    width: 110, 
-    height: 65, 
-    borderRadius: 8, 
-    backgroundColor: 'rgba(255,255,255,0.03)' 
-  },
-  skeletonTextContainer: { 
-    marginLeft: 15, 
-    flex: 1 
-  },
-  skeletonTitle: { 
-    width: '85%', 
-    height: 12, 
-    backgroundColor: 'rgba(255,255,255,0.03)', 
-    borderRadius: 4, 
-    marginBottom: 10 
-  },
-  skeletonArtist: { 
-    width: '45%', 
-    height: 10, 
-    backgroundColor: 'rgba(255,255,255,0.02)', 
-    borderRadius: 4 
-  },
+  input: { flex: 1, color: 'white', marginLeft: 10, fontSize: 16 },
+  item: { flexDirection: 'row', marginBottom: 18, alignItems: 'center' },
+  img: { width: 100, height: 60, borderRadius: 8, backgroundColor: '#222' },
+  info: { flex: 1, marginLeft: 15 },
+  txtMain: { color: 'white', fontSize: 14, fontWeight: '600' },
+  txtSub: { color: '#888', fontSize: 12, marginTop: 4 }
 });
 
 export default SearchScreen;

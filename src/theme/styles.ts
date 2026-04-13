@@ -2,7 +2,7 @@ import { StyleSheet } from 'react-native';
 import { Colors } from './colors';
 
 /**
- * Reusable global styles for consistent UI
+ * Shared global styles
  */
 export const GlobalStyles = StyleSheet.create({
   container: {
@@ -15,7 +15,6 @@ export const GlobalStyles = StyleSheet.create({
     padding: 20,
     marginVertical: 10,
   },
-  // Add the missing heading style here
   heading: {
     color: Colors.textPrimary,
     fontSize: 28,
